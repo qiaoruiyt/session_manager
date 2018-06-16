@@ -12,6 +12,7 @@ import json
 
 nlp_docker_IP = "192.168.99.100:5000"
 SessionMGR = Blueprint('SessionMGR',__name__)
+INTENT_REPEAT = 'repeat'
 
 @SessionMGR.route('/test2', methods=['POST'])
 # Testing the state session thingy 
@@ -80,8 +81,15 @@ class Session:
         self.chat_history = []
         self.arg_dict = args
         self.function = fn
+
+        # For context awareness
+        self.last_query = None
         
     def process_query(self, query_object):
+        # context awareness
+        self.last_query = query_object
+        # context awareness
+
         entity_args = query_object.get_entities()
         print("Entities captured: {}".format(entity_args))
         for entity_type in entity_args.keys():
@@ -123,6 +131,26 @@ class Session:
     def terminate_session():
         return "terminate session"
 
+    def process_context(self, query_object):
+        # Return:
+        #   None: not applicable for context awareness
+        #   0: no entities can be identified or entity doesn't match
+        #   query_object: context awared query_object
+        intent = query_object.get_intent()
+        if intent != INTENT_REPEAT or self.last_query is None:
+            return None
+        else:
+            entities = query_object.get_entities()
+            if len(entities) == 0:
+                return 0 # no entities can be identified
+            else:
+                try:
+                    new_query = self.last_query
+                    for key in entities.keys():
+                        new_query.entities[key] = entities[key]
+                    return new_query
+                except:
+                    return 0
 
 class Session_Manager:
     def __init__(self, args_required, intent_functions):
@@ -160,6 +188,20 @@ class Session_Manager:
             return answer 
         else:
             session = self.sessions[identifier]
+
+
+            # for context awareness
+            context_query = session.process_context(query_object)
+            if context_query == 0:
+                # A context query but entities not match, return not understandable
+                pass
+            elif context_query is not None:
+                # A context query 
+                pass 
+            else: # not a context query
+                session.last_query = query_object
+            # context awareness ends
+
             answer = session.process_query(query)
             # Check for completion
             # TODO: keep server in memory
@@ -173,6 +215,8 @@ class Session_Manager:
         # get Session to send termination message?
         del self.sessions[identifier]
         
+
+
 def show_usage(resource):
     reply = "showing resource {}".format(resource)
     print(reply)
@@ -185,6 +229,9 @@ def list_VM():
     print("Reply :", reply)
     return reply
 
+def context_test():
+    pass
+    
 args_required = {"show_usage":{"resource":None}, "list_VM":{}}
 intent_function = {"show_usage": show_usage, "list_VM": list_VM}
 sessionMGR = Session_Manager(args_required, intent_function)
