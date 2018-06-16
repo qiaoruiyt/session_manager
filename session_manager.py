@@ -191,15 +191,15 @@ class Session_Manager:
 
 
             # for context awareness
-            context_query = session.process_context(query_object)
+            context_query = session.process_context(query)
             if context_query == 0:
                 # A context query but entities not match, return not understandable
-                pass
+                return "Sorry, I am not sure I understand"
             elif context_query is not None:
                 # A context query 
-                pass 
+                query = context_query
             else: # not a context query
-                session.last_query = query_object
+                session.last_query = query
             # context awareness ends
 
             answer = session.process_query(query)
