@@ -26,30 +26,27 @@ def api_test2():
         print(type(request_json))
         #request_json = json.dumps(request_json)
         print("Request received: {}".format(request_json))
-
+        rasa_IP ="100.88.8.41:5000"
         print("DataType sent to NLP server: {}".format(type(request_json)))
         nlp_message = requests.post(url='http://{}/parse'.format(rasa_IP), data=json.dumps(request_json))
         nlp_reply = nlp_message.json() # Check the JSON Response Content documentation below
         print("NLP reply: {}".format(nlp_reply))
         #response_json = processNLP(nlp_Reply)
-        response_json = nlp_reply
+        nlp_reply['q'] = request_json['q']
         query = Query(nlp_reply)
-
+        
         #TODO: return a JSON key containing the intent
         #TODO: data
         #TODO: If user is to list backend; send server names (array of strings)
-        #session_response = {}
-        #session_response["intent"] = query.get_intent()
-        #session_response["data"] = sessionMGR.receive_query(query)
-        session_response = sessionMGR.receive_query(query)
-        #session_response["message"] = "Query completed"
+        session_response = {}
+        session_response["NLPintent"] = query.get_intent()
+        session_response["data"] = sessionMGR.receive_query(query)
         return jsonify(session_response)
     except Exception as ex:
-        print(ex)
-        return jsonify({"response": "error in processing sent request", "ex": str(ex)})
-
-def setup():
-        return [SessionMGR]
+        _, _, exc_traceback = sys.exc_info()
+        print(str(ex))
+        print(traceback.print_tb(exc_traceback, file=sys.stdout))
+        return jsonify({"response": "error in processing sent request", "ex": str(ex)})[SessionMGR]
 
 
 
