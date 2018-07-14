@@ -4,7 +4,7 @@ Created on Sat Jun 16 18:09:48 2018
 
 @author: Sidney
 """
-
+from flask_jwt_extended import jwt_required
 from flask import Blueprint, Flask, url_for
 from flask import jsonify
 import requests
@@ -47,6 +47,24 @@ def api_test2():
         print(str(ex))
         print(traceback.print_tb(exc_traceback, file=sys.stdout))
         return jsonify({"response": "error in processing sent request", "ex": str(ex)})[SessionMGR]
+    
+@TestURL.route('/auth_test', methods=['POST'])
+@jwt_required # JWT web decorator
+def api_test2():
+    try:
+        request_json = request.get_json(force=True)# You'll get a dictionary
+        print(type(request_json))
+        #request_json = json.dumps(request_json)
+        print("Request received: {}".format(request_json))
+        session_response = {"Success":"Success"}
+        return jsonify(session_response)
+
+    except Exception as ex:
+        print(ex)
+        return jsonify({"response": "error in processing sent request", "ex": str(ex)})
+    
+def setup():
+        return [SessionMGR,TestURL]
 
 
 
